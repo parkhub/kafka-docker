@@ -1,7 +1,20 @@
 #!/bin/bash
 
-if ![[ "$KUBE_CLUSTER" ]]
+
+# If RUN_ENV is set to kubernetes, use kubernetes configs. Otherwise, docker.
+if [[ "$RUN_ENV" -eq "kubernetes"  ]]
 then
+  echo "Running with Kubernetes Configs"
+
+  export KAFKA_PORT=9092
+  if [[ -z "$KAFKA_BROKER_ID" ]]; then
+      # By default auto allocate broker ID
+      export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $2}')
+      echo "Running with Broker_ID: $KAFKA_BROKER_ID"
+  fi
+else
+  echo "Running with Docker Configs"
+
   if [[ -z "$KAFKA_PORT" ]]; then
       export KAFKA_PORT=9092
   fi
@@ -19,11 +32,6 @@ then
 
   if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" && -n "$HOSTNAME_COMMAND" ]]; then
       export KAFKA_ADVERTISED_HOST_NAME=$(eval $HOSTNAME_COMMAND)
-  fi
-else
-  if [[ -z "$KAFKA_BROKER_ID" ]]; then
-      # By default auto allocate broker ID
-      export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $2}')
   fi
 fi
 

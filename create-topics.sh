@@ -1,6 +1,11 @@
 #!/bin/bash
 
 
+if [[ -z "$KAFKA_CREATE_TOPICS" ]]; then
+  echo "Skipping Creating Topics"
+  exit 1
+fi
+
 if [[ -z "$START_TIMEOUT" ]]; then
     START_TIMEOUT=600
 fi
