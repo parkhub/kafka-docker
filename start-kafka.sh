@@ -1,20 +1,36 @@
 #!/bin/bash
 
-if [[ -z "$KAFKA_PORT" ]]; then
-    export KAFKA_PORT=9092
+if ![[ "$KUBE_CLUSTER" ]]
+then
+  if [[ -z "$KAFKA_PORT" ]]; then
+      export KAFKA_PORT=9092
+  fi
+
+  if [[ -z "$KAFKA_ADVERTISED_PORT" && \
+    -z "$KAFKA_LISTENERS" && \
+    -z "$KAFKA_ADVERTISED_LISTENERS" ]]; then
+      export KAFKA_ADVERTISED_PORT=$(docker port `hostname` $KAFKA_PORT | sed -r "s/.*:(.*)/\1/g")
+  fi
+
+  if [[ -z "$KAFKA_BROKER_ID" ]]; then
+      # By default auto allocate broker ID
+      export KAFKA_BROKER_ID=-1
+  fi
+
+  if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" && -n "$HOSTNAME_COMMAND" ]]; then
+      export KAFKA_ADVERTISED_HOST_NAME=$(eval $HOSTNAME_COMMAND)
+  fi
+else
+  if [[ -z "$KAFKA_BROKER_ID" ]]; then
+      # By default auto allocate broker ID
+      export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $2}')
+  fi
 fi
-if [[ -z "$KAFKA_ADVERTISED_PORT" && \
-  -z "$KAFKA_LISTENERS" && \
-  -z "$KAFKA_ADVERTISED_LISTENERS" ]]; then
-    export KAFKA_ADVERTISED_PORT=$(docker port `hostname` $KAFKA_PORT | sed -r "s/.*:(.*)/\1/g")
-fi
-if [[ -z "$KAFKA_BROKER_ID" ]]; then
-    # By default auto allocate broker ID
-    export KAFKA_BROKER_ID=-1
-fi
+
 if [[ -z "$KAFKA_LOG_DIRS" ]]; then
     export KAFKA_LOG_DIRS="/kafka/kafka-logs-$HOSTNAME"
 fi
+
 if [[ -z "$KAFKA_ZOOKEEPER_CONNECT" ]]; then
     export KAFKA_ZOOKEEPER_CONNECT=$(env | grep ZK.*PORT_2181_TCP= | sed -e 's|.*tcp://||' | paste -sd ,)
 fi
@@ -24,9 +40,6 @@ if [[ -n "$KAFKA_HEAP_OPTS" ]]; then
     unset KAFKA_HEAP_OPTS
 fi
 
-if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" && -n "$HOSTNAME_COMMAND" ]]; then
-    export KAFKA_ADVERTISED_HOST_NAME=$(eval $HOSTNAME_COMMAND)
-fi
 
 for VAR in `env`
 do
