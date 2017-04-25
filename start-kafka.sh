@@ -2,7 +2,7 @@
 
 
 # If RUN_ENV is set to kubernetes, use kubernetes configs. Otherwise, docker.
-if [[ "$RUN_ENV" -eq "kubernetes"  ]]
+if [[ "$RUN_ENV" == "kubernetes"  ]]
 then
   echo "Running with Kubernetes Configs"
 
